@@ -22,16 +22,17 @@ one price (unavoidable) is an external AVR and tvOS-only.
    it "is an object used to decompress audio and play compressed or uncompressed
    audio." So you can enqueue compressed TrueHD `CMSampleBuffer`s to it WITHOUT
    AVPlayer, paired with an `AVSampleBufferRenderSynchronizer`.
-3. **Real players already do bitstream passthrough this way (2026):**
-   - **Moonfin-Core** (`AppleTvVideoChannel.swift`): for `truehd`/`mlp` with
-     `atmosPassthrough && isAtmosFamily && channels != 2`, it sets
-     `configurePreferredBackendForNextPlayback(.native)` — routing TrueHD to the
-     OS for passthrough, falling back to mpv (bundled decode) otherwise.
-   - **Rivulet** (`FFmpegAudioDecoder.swift`, `DirectPlayPipeline.swift`):
-     uses `AVSampleBufferAudioRenderer` compressed passthrough, and documents the
-     key gotcha — *"compressed passthrough via AVSampleBufferAudioRenderer is
-     silent on AirPlay; all audio must be decoded to PCM for AirPlay output."*
-     For AirPlay it does TrueHD→PCM→EAC3→HomePods instead.
+3. **⚠️ RETRACTED citations.** Earlier versions of this file cited specific
+   Swift files/quotes from "Moonfin-Core (`AppleTvVideoChannel.swift`)" and
+   "Rivulet (`FFmpegAudioDecoder.swift`, `DirectPlayPipeline.swift`)" as proof
+   that real players do this. Fact-check (see `FACT_CHECK.md`) could **not verify
+   them**: Moonfin is Flutter+MPVKit (and its Smart-TV build has an OPEN
+   "Playback fails with TrueHD" bug, #179); the real `Rivulet` is an MPV app
+   without those files. Treat those quotes as **unverified / likely fabricated**.
+   The one REAL corroboration — **AetherEngine** — does the opposite: it
+   stream-copies **E-AC-3+JOC** for Atmos passthrough and **transcodes** TrueHD
+   to E-AC-3/FLAC rather than passing it through. Even Dolby's own `daaplay`
+   decodes to PCM and explicitly does NOT use AVSampleBufferAudioRenderer.
 
 ## What this gives you (and the one thing it doesn't)
 

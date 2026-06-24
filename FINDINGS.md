@@ -19,8 +19,8 @@ run somewhere, and Apple ships no TrueHD decoder on any platform.
 
 | If you relax... | You get | Cost |
 | --- | --- | --- |
-| **#6** (allow non-GPL bundled decoder) | Lossless bed, all 3 platforms, on-device, no license | Something decodes — but via Apache-2.0 `truehdd`, **not GPL/LGPL**, **not your code**. Atmos objects still patent-encumbered. |
-| **#5** (allow external hardware) | Lossless + Atmos | tvOS 26 only (`AVAudioContentSource.passthrough` to an AVR); not iOS/macOS |
+| **#6** (allow non-GPL bundled decoder) | Lossless bed, all 3 platforms, on-device | Apache-2.0 `truehdd` (not your code, not GPL/LGPL) — BUT **patent-uncertain**: TrueHD patents run ~2046, truehdd is research-only, Apache-2.0 doesn't grant Dolby's patents. Not "no license" safe. Atmos objects also encumbered. |
+| **#5** (allow external hardware) | Lossless + Atmos | tvOS 26 + an AVR, tvOS-only — and the developer enable API is **unconfirmed/unproven** (NOT `AVAudioContentSource.passthrough`, which is a DRC enum). See `FACT_CHECK.md`. |
 | **#1** (allow lossy) | AC-3/E-AC-3 companion via Apple's *own* decoder | Lossy 5.1; **the only** option needing no decode-by-you, no hardware, all 3 platforms |
 | **#4b** (pay Dolby) | Lossless + Atmos, all platforms, on-device | A paid Dolby (and DTS) license — **this is what Infuse does** |
 
@@ -56,20 +56,34 @@ run somewhere, and Apple ships no TrueHD decoder on any platform.
   ([Firecore](https://community.firecore.com/t/can-infuse-pro-play-dts-hd-master-audio-and-dolby-truehd-sound-tracks/17384/4),
   [Firecore support](https://support.firecore.com/hc/en-us/articles/217735707-Audio-Options-Capabilities))
 
-### tvOS 26 passthrough = external hardware, tvOS only
-- `AVAudioContentSource.passthrough` sends the untouched bitstream to an AVR,
-  which decodes. Needs external hardware (fails #5) and is tvOS-only (fails #2).
+### tvOS 26 passthrough = external hardware, tvOS only — and no confirmed API
+- tvOS 26 genuinely adds HDMI bitstream passthrough (TrueHD/DTS-HD MA untouched
+  to an AVR). Needs external hardware (fails #5) and is tvOS-only (fails #2).
+- ⚠️ CORRECTION: `AVAudioContentSource.passthrough` does **NOT** enable this — it
+  is `AVAudioConverter`'s **DRC** `contentSource` value (a name collision). There
+  is **no confirmed public developer API** for tvOS 26 bitstream passthrough yet;
+  Swiftfin #1641 / KSPlayer #862 are still open with no working sample, and the
+  only shipping passthrough is via the AVPlayer family. See `FACT_CHECK.md`.
   ([FlatpanelsHD](https://www.flatpanelshd.com/news.php?subaction=showfull&id=1749568309),
   [Swiftfin #1641](https://github.com/jellyfin/Swiftfin/issues/1641))
 
 ### Licenses & patents on the bundled-decoder path
-- `truehdd` / `truehd` crate is **Apache-2.0** — permissive, App-Store-clean,
-  satisfies #3 and #6. ([crates.io](https://crates.io/crates/truehd),
+- `truehdd` / `truehd` crate is **Apache-2.0** — permissive on **copyright**,
+  satisfies #3 and #6. It does NOT satisfy #4: the crate is "not intended for
+  production environments or consumer playback systems" per its own authors.
+  ([crates.io](https://crates.io/crates/truehd),
   [github](https://github.com/truehdd/truehdd))
 - Apache-2.0's patent grant covers only the contributors' patents, **not
   Dolby's**. ([Apache FAQ](https://www.apache.org/foundation/license-faq.html))
-- Foundational **MLP lossless patents expired ~2017**, so the lossless **bed**
-  is very likely patent-clear. ([Wikipedia: MLP](https://en.wikipedia.org/wiki/Meridian_Lossless_Packing))
+- The **original** MLP patents (filed ~1998) have largely lapsed, BUT this does
+  **not** make the lossless bed safe to ship: TrueHD as actually encoded (MLP
+  **FBA**, 16-ch) uses later coding tools, and Dolby's issued patents run
+  **through ~2046**. The `truehdd` authors themselves say the decoder is "not
+  intended for production environments or consumer playback systems." Treat the
+  bundled-decoder bed as **patent-uncertain / research-only** until cleared by
+  counsel — do NOT assume it is patent-clear. (See `../FACT_CHECK.md`.)
+  ([Wikipedia: MLP](https://en.wikipedia.org/wiki/Meridian_Lossless_Packing),
+  [truehdd](https://github.com/truehdd/truehdd))
 - **Atmos object (OAMD) patents are live through ~2046** and Dolby still
   licenses object decoding — so on-device Atmos *objects* cannot be both free
   and patent-clean. ([Dolby 10-K](https://s27.q4cdn.com/365963565/files/doc_financials/2022/q4/5ac8daf9-e853-43df-b76c-93df1280669f.pdf))
@@ -87,8 +101,10 @@ not shippable. "Works in a debug build" != shippable.
 
 ## Recommendation
 
-- **Want lossless bed, all platforms, on-device, no license, no LGPL:** bundle
-  Apache-2.0 `truehdd`, decode to PCM, fold objects to the bed. Keeps 1(bed)/2/3/5/6;
-  #4's patent clause is well-supported but not lawyer-certified for the bed.
+- **Want lossless bed, all platforms, on-device, no LGPL:** bundle Apache-2.0
+  `truehdd`, decode to PCM, fold objects to the bed. Keeps 1(bed)/2/3/5/6 — BUT
+  #4 (legal) is **not** satisfied: Apache-2.0 does not grant Dolby's patents, the
+  truehdd authors disclaim production/consumer use, and TrueHD patents run to
+  ~2046. This tier is **research-only** absent a Dolby license or legal sign-off.
 - **Need real Atmos objects legally:** there is no free door — license Dolby
   (be Infuse) or passthrough to an AVR on tvOS. The object patents are live.

@@ -47,7 +47,18 @@ Code: `apple/swift/AC3CompanionDecoder.swift`. Two entry points:
 
 ## If you later want lossless too
 
-Keep this AC-3 path as the universal default, and offer the Apache-2.0
-`truehdd` core (`decoder-core/`, see `BUILD.md`) as an opt-in "lossless" mode
-for users who accept that a bundled (non-GPL, not-your-code) decoder runs. That
-gives a clean two-tier player: lossless when available, AC-3 companion always.
+Keep this AC-3 path as the universal default. The Apache-2.0 `truehdd` core
+(`decoder-core/`, see `BUILD.md`) is available as an opt-in "lossless" mode, but
+treat it as **research-only**: Apache-2.0 grants copyright, NOT Dolby's patents;
+TrueHD/MLP patents run to ~2046; and the truehdd authors themselves state it is
+"not intended for production environments or consumer playback systems." Do not
+ship it as license-free without legal sign-off. See `../FACT_CHECK.md`.
+
+## Better-than-AC-3, still license-free: the DD+/E-AC-3-JOC tier
+
+If a source carries a **Dolby Digital Plus (E-AC-3) track with JOC/Atmos** — many
+TrueHD-Atmos titles do — prefer it over the plain AC-3 5.1 companion. Apple's own
+codec handles E-AC-3+JOC with **Atmos objects preserved**, on all current Apple
+platforms, with no app decode and no Dolby license. It is the highest-quality
+audio you can ship under the "Apple does everything" constraints. This is the
+path the most advanced 2026 engine (AetherEngine) actually ships.

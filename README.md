@@ -16,8 +16,14 @@ choices and a router to switch between them:
 
 | You accept... | You get | Code |
 | --- | --- | --- |
-| A bundled (non-GPL) decoder runs | **Lossless bed**, all platforms, on-device, no license | [`decoder-core/`](decoder-core) + [`apple/BUILD.md`](apple/BUILD.md) |
-| Lossy instead of lossless | **AC-3/E-AC-3** via Apple's own codec — no decoder you wrote | [`apple/swift/`](apple/swift) |
+| A bundled (non-GPL) decoder runs **(research-only — see below)** | **Lossless bed**, all platforms, on-device | [`decoder-core/`](decoder-core) + [`apple/BUILD.md`](apple/BUILD.md) |
+| Lossy instead of lossless | **AC-3/E-AC-3** via Apple's own codec — no decoder you wrote, no license | [`apple/swift/`](apple/swift) |
+
+> ⚠️ **Read [`FACT_CHECK.md`](FACT_CHECK.md) first.** The bundled-decoder
+> "lossless" tier is **NOT license-free to ship**: TrueHD/MLP patents run to
+> ~2046 and the `truehdd` crate's own authors mark it research-only (Apache-2.0
+> covers copyright, not Dolby's patents). The only fully constraint-satisfying,
+> ship-today path is the AC-3 / E-AC-3 companion via Apple's codec.
 
 ## File map
 
@@ -65,9 +71,12 @@ pipeline.stop()
    TrueHD-only title has nothing for this path to play — use `decoder-core/`.
 3. **The ring buffer in `AC3DecodePipeline` is a scaffold.** Swap its `NSLock`
    for atomics before relying on it in a real-time audio context.
-4. **Lossless ≠ free of patents.** The MLP lossless core expired ~2017, but get
-   counsel before commercial ship; Atmos *objects* remain patented (~2046) and
-   are intentionally out of scope here.
+4. **Lossless ≠ free of patents.** The *original* MLP core (~1998) has largely
+   lapsed, but TrueHD as actually encoded (MLP FBA) and Dolby's issued patents
+   run to ~2046, and the `truehdd` crate is research-only by its authors. Do NOT
+   ship the bundled-decoder tier as "license-free" — get counsel. Atmos *objects*
+   remain patented (~2046) and are intentionally out of scope here. See
+   [`FACT_CHECK.md`](FACT_CHECK.md).
 
 ## What this repo does NOT do
 

@@ -1,3 +1,16 @@
+> ⚠️ **Correction banner (see `FACT_CHECK.md`).** Some specific code citations
+> below did NOT survive fact-checking and are **retracted**: the "Rivulet
+> (`FFmpegAudioDecoder.swift` / `FFmpegRemuxSession.swift`)" and "Moonfin-Core
+> (`AppleTvVideoChannel.swift`)" quotes are unverified/likely fabricated (real
+> Rivulet is an MPV app; real Moonfin is Flutter+MPVKit). The
+> `kAudioCodecContentSource_Passthrough = 42` value is unverified. And
+> `AVAudioContentSource.passthrough` is the **AVAudioConverter DRC** enum, NOT an
+> HDMI bitstream switch. The load-bearing, verified conclusions still stand: no
+> Apple TrueHD decoder; Apple-decoder paths are license-free for the app; every
+> real player either bundles FFmpeg/VLC/mpv or passes through to an AVR.
+> **AetherEngine** is the one verified reference and it transcodes TrueHD rather
+> than passing it through.
+
 # GitHub research: player issues & discussions (TrueHD on Apple)
 
 Searched issues/discussions across Apple-platform players, including the
