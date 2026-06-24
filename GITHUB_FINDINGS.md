@@ -89,3 +89,43 @@ No repository, fork, or hidden project plays TrueHD via an Apple decoder. Every
 one that plays it bundles FFmpeg and decodes itself; the rest passthrough to an
 external receiver. The "let Apple decode TrueHD" path produces zero code on
 GitHub because the decoder does not exist.
+
+## Deeper dig (round 2) — more variants, ObjC, Gitee, and AetherEngine
+
+Conceding the fair point: GitHub code search is NOT exhaustive (default-branch
+only, partial indexing, query quirks, private repos invisible). So these are
+non-proof by absence — but every avenue still lands the same place:
+
+- `kAudioFormatTrueHD` / `kAudioFormatDolbyTrueHD` / `kAudioFormatMlp`: **0**
+- TrueHD + `AudioComponentFindNext`/`AudioComponentCount` (ObjC): **0**
+- `'mlpa'` as a real `AudioStreamBasicDescription`/`AudioFormatID`: **0**
+- Gitee / 码云 (Chinese host GitHub can't see): only a KSPlayer mirror (FFmpeg)
+
+### AetherEngine — the most advanced 2026 reference, confirms the architecture
+`superuser404notfound/AetherEngine` (iOS/tvOS/macOS engine, FFmpeg demux +
+VideoToolbox). Its `AudioBridge.swift` for TrueHD:
+- **FFmpeg decodes it**: `avcodec_find_decoder(srcCodecID)` + `avcodec_open2`.
+  Apple does not decode TrueHD here.
+- **Atmos objects dropped, bed survives**: "Atmos object metadata survives
+  neither mode ... FFmpeg's EAC3 encoder produces no JOC."
+- **Not passthrough**: "TrueHD/DTS aren't legal in fMP4 per ISOBMFF+HLS spec," so
+  TrueHD takes a decode→resample→re-encode path (to EAC3/FLAC); only EAC3+JOC
+  stays lossless via stream-copy.
+
+This is exactly the design on this branch (FFmpeg handles the bitstream; Apple
+never decodes TrueHD; objects are lost on decode).
+
+## The point that doesn't depend on searching all of GitHub
+
+You cannot search all of GitHub — true. But you don't need to. A repo cannot
+make the OS decode a codec the OS lacks. The decisive facts are structural and
+locally verifiable, not search-based:
+- There is **no `kAudioFormatMLP`/TrueHD `AudioFormatID`** in any Apple SDK
+  (the only hits anywhere are dead Symbian code).
+- There is **no `'mlp '`/`'trhd'` `'adec'` AudioComponent** shipped by the OS —
+  verifiable on YOUR device with `AudioDecoderProbe.swift`.
+
+Therefore even an undiscovered/hidden repo could only do one of the three things
+every visible repo does: bundle FFmpeg (decode itself), passthrough to external
+hardware, or play the AC-3 companion via Apple's codec. None is "Apple decodes
+TrueHD for free," because that capability is absent from the OS itself.
