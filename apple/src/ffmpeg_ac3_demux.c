@@ -83,3 +83,74 @@ void ac3demux_close(AC3Demux *d) {
     if (d->fmt) avformat_close_input(&d->fmt);
     free(d);
 }
+
+// --- TrueHD / MLP demuxer -----------------------------------------------------
+
+struct THDDemux {
+    AVFormatContext *fmt;
+    int stream_index;
+    AVPacket *pkt;
+    double time_base; // seconds per pts unit
+};
+
+THDDemux *thddemux_open(const char *url, int *out_channels, int *out_sample_rate) {
+    AVFormatContext *fmt = NULL;
+    if (avformat_open_input(&fmt, url, NULL, NULL) < 0) return NULL;
+    if (avformat_find_stream_info(fmt, NULL) < 0) {
+        avformat_close_input(&fmt);
+        return NULL;
+    }
+
+    int idx = -1;
+    for (unsigned i = 0; i < fmt->nb_streams; i++) {
+        AVCodecParameters *p = fmt->streams[i]->codecpar;
+        if (p->codec_type != AVMEDIA_TYPE_AUDIO) continue;
+        if (p->codec_id == AV_CODEC_ID_TRUEHD || p->codec_id == AV_CODEC_ID_MLP) {
+            idx = (int)i;
+            break;
+        }
+    }
+    if (idx < 0) { avformat_close_input(&fmt); return NULL; }
+
+    AVCodecParameters *p = fmt->streams[idx]->codecpar;
+    if (out_channels)    *out_channels    = p->ch_layout.nb_channels; // FFmpeg 5.1+
+    if (out_sample_rate) *out_sample_rate = p->sample_rate;
+
+    THDDemux *d = (THDDemux *)calloc(1, sizeof(THDDemux));
+    if (!d) { avformat_close_input(&fmt); return NULL; }
+    d->fmt = fmt;
+    d->stream_index = idx;
+    d->pkt = av_packet_alloc();
+    AVRational tb = fmt->streams[idx]->time_base;
+    d->time_base = (tb.den != 0) ? (double)tb.num / (double)tb.den : 0.0;
+    if (!d->pkt) { avformat_close_input(&fmt); free(d); return NULL; }
+    return d;
+}
+
+int thddemux_next(THDDemux *d, const uint8_t **data, int *size, double *pts_seconds) {
+    if (!d) return -1;
+    av_packet_unref(d->pkt);
+    for (;;) {
+        int r = av_read_frame(d->fmt, d->pkt);
+        if (r == AVERROR_EOF) return 0;
+        if (r < 0) return r;
+        if (d->pkt->stream_index == d->stream_index) {
+            *data = d->pkt->data;
+            *size = d->pkt->size;
+            if (pts_seconds) {
+                *pts_seconds = (d->pkt->pts == AV_NOPTS_VALUE)
+                    ? (0.0 / 0.0) // NaN
+                    : (double)d->pkt->pts * d->time_base;
+            }
+            return 1;
+        }
+        av_packet_unref(d->pkt);
+    }
+}
+
+void thddemux_close(THDDemux *d) {
+    if (!d) return;
+    if (d->pkt) av_packet_free(&d->pkt);
+    if (d->fmt) avformat_close_input(&d->fmt);
+    free(d);
+}

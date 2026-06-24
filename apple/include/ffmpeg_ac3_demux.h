@@ -43,6 +43,23 @@ int ac3demux_next(AC3Demux *d, const uint8_t **data, int *size);
 
 void ac3demux_close(AC3Demux *d);
 
+// --- TrueHD / MLP demuxer (for the no-AVPlayer passthrough renderer) ----------
+// Same idea, but locates the TrueHD/MLP stream and returns PTS (seconds) so the
+// passthrough renderer can timestamp CMSampleBuffers. Still DEMUX-ONLY: no
+// avcodec decode is performed; the bitstream is handed to the OS untouched.
+
+typedef struct THDDemux THDDemux;
+
+// Open `url`, locate the TrueHD/MLP audio stream. NULL if none found / on error.
+THDDemux *thddemux_open(const char *url, int *out_channels, int *out_sample_rate);
+
+// Read the next TrueHD access unit.
+//   returns 1 + sets *data/*size and *pts_seconds (NaN if unknown),
+//           0 at end of stream, <0 on error.
+int thddemux_next(THDDemux *d, const uint8_t **data, int *size, double *pts_seconds);
+
+void thddemux_close(THDDemux *d);
+
 #ifdef __cplusplus
 }
 #endif
