@@ -32,11 +32,16 @@ Code: `apple/swift/AC3CompanionDecoder.swift`. Two entry points:
 
 ## Honest caveats — verify before shipping
 
-1. **A companion track must exist.** Most Blu-ray/UHD TrueHD tracks ship a
-   separate Dolby Digital (AC-3) or DD+ (E-AC-3) track, OR the TrueHD carries an
-   embedded AC-3 core. Your demuxer must surface it. If a title has *only*
-   TrueHD with no AC-3 anywhere, this path has nothing to play — fall back to
-   the bundled-decoder path (`decoder-core/`) for that title.
+1. **A companion AC-3 must exist — both shapes are now handled.** TrueHD tracks
+   ship AC-3 either as a *separate* Dolby Digital (AC-3) / DD+ (E-AC-3) track, or
+   as an AC-3 *core interleaved inside the TrueHD stream* (unaltered Blu-ray).
+   The separate track is surfaced by `AVAssetReaderAC3Source` (MP4) or a
+   stream-iterating demuxer (MKV/M2TS); the interleaved core — where a demuxer
+   shows only `truehd` and `kAudioFormatAC3` matches nothing — is de-interleaved
+   by `TrueHDCoreAC3Source` (`AC3_CORE_EXTRACTION.md`), without decoding TrueHD
+   and without GPL/LGPL. Only a title that is *truly* TrueHD-only (no core
+   anywhere, common after MKV remux) has nothing for this path; fall back to the
+   bundled-decoder path (`decoder-core/`) there.
 2. **iOS AC-3-via-AVAudioConverter availability.** AC-3/E-AC-3 decode is
    reliable through AVPlayer/HLS on all platforms; raw `AVAudioConverter` AC-3
    decode is well-supported on macOS and current iOS/tvOS, but validate on your

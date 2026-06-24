@@ -30,6 +30,11 @@ choices and a router to switch between them:
   packet → PCM via Apple's codec. No AVPlayer, no AVFoundation.
 - `apple/swift/AC3DecodePipeline.swift` — demuxer → `AC3ConverterCore` → ring
   buffer → output AudioUnit. The full no-AVPlayer playback chain.
+- `apple/swift/TrueHDCoreAC3Source.swift` — **de-interleaves the AC-3 core out
+  of a combo TrueHD stream** (the case where a demuxer shows only `truehd` and
+  `kAudioFormatAC3` matches nothing). Clean-room ATSC A/52 syncframe scan; no
+  TrueHD decode, no GPL/LGPL. Feeds `AC3DecodePipeline`. See
+  `apple/AC3_CORE_EXTRACTION.md`.
 - `apple/swift/AC3CompanionDecoder.swift` — AVFoundation variants
   (`AVAudioConverter` decoder + optional AVPlayer track selection).
 - `apple/swift/TrueHDPlaybackRouter.swift` — pure policy function: choose
@@ -60,9 +65,15 @@ pipeline.stop()
 1. **Verify the decoder exists on-device.** Run `AudioDecoderProbe.swift`; look
    for an `'adec'` component with subtype `'ac-3'` / `'ec-3'`. Present on macOS;
    confirm on your minimum iOS/tvOS targets. If absent, fall back to remux+AVPlayer.
-2. **A companion track must exist.** TrueHD titles usually carry a separate
-   AC-3/E-AC-3 track or an embedded AC-3 core; your demuxer must surface it. A
-   TrueHD-only title has nothing for this path to play — use `decoder-core/`.
+2. **A companion AC-3 must exist — and now the interleaved core counts.** TrueHD
+   titles carry AC-3 in one of two shapes: a *separate* AC-3/E-AC-3 track
+   (MP4 → `AVAssetReaderAC3Source`; MKV/M2TS → a stream-iterating demuxer), or
+   an AC-3 *core interleaved inside the TrueHD stream* (unaltered Blu-ray
+   `.m2ts`/`.thd`). The interleaved core is now extractable without decoding
+   TrueHD via [`apple/swift/TrueHDCoreAC3Source.swift`](apple/swift/TrueHDCoreAC3Source.swift)
+   — see [`apple/AC3_CORE_EXTRACTION.md`](apple/AC3_CORE_EXTRACTION.md). Only a
+   genuinely TrueHD-only title (no core anywhere — common after MKV remux) has
+   nothing for this path to play; use `decoder-core/` for those.
 3. **The ring buffer in `AC3DecodePipeline` is a scaffold.** Swap its `NSLock`
    for atomics before relying on it in a real-time audio context.
 4. **Lossless ≠ free of patents.** The MLP lossless core expired ~2017, but get
