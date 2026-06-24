@@ -12,6 +12,9 @@
 //   A. AVFoundation-native container (MP4/MOV/HLS): just SELECT the AC-3 track
 //      with AVPlayer media selection. Apple decodes + plays it. Zero decode
 //      code, most robust, all platforms. -> `selectAC3Track(in:)`.
+//      NOTE: this variant uses AVPlayer. If your product forbids AVPlayer/HLS,
+//      do NOT use path A — use the pure-AudioToolbox `AC3DecodePipeline` (no
+//      AVPlayer, no HLS) instead. Path A is kept only for AVFoundation-native apps.
 //
 //   B. Your own demuxer (MKV/M2TS): feed AC-3/E-AC-3 access units to
 //      `AppleAC3Decoder`, which uses AVAudioConverter (Apple's codec) to turn

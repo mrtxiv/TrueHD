@@ -1,18 +1,27 @@
 // TrueHDPassthrough.swift  (tvOS 26+)
 //
-// The ONLY way to play lossless Dolby TrueHD while your app decodes NOTHING and
-// bundles NO decoder: hand the untouched TrueHD bitstream to the OS and let an
-// external AV receiver decode it. Apple's API for this is
-// `AVAudioContentSource.passthrough`:
+// EXPERIMENTAL / UNPROVEN (see ../../VERIFICATION.md §E). This is the AVPlayer
+// HYPOTHESIS for lossless TrueHD passthrough: hand the untouched TrueHD bitstream
+// to the OS via an AVPlayer item and let an external AV receiver decode it. The
+// symbol `AVAudioContentSource.passthrough` is real (AVFAudio, Kind: case —
+// verified):
 //   https://developer.apple.com/documentation/avfaudio/avaudiocontentsource/passthrough
+// ...but WHERE you assign it (AVPlayerItem? AVAudioSession? a sample-buffer
+// renderer?) is NOT documented or confirmed.
 //
-// Hard costs (unavoidable, by design):
+// Relationship to the other file: `TrueHDPassthroughRenderer.swift` is the
+// competing NO-AVPlayer hypothesis (AVSampleBufferAudioRenderer). They are two
+// guesses at the same unshipped capability. It is unknown which — if either —
+// actually works; do not treat either as proven. Earlier wording here claimed
+// "there is no non-AVPlayer passthrough API"; that was NOT verified and has been
+// removed.
+//
+// Hard costs (if it works at all):
 //   * Requires EXTERNAL HARDWARE — an AVR/soundbar performs the decode.
 //   * tvOS / Apple TV 4K only. iOS and macOS have no TrueHD bitstream output.
-//   * Uses AVPlayer — passthrough is an AVFoundation routing feature; there is
-//     no non-AVPlayer passthrough API.
-//   * As of tvOS 26 betas, TrueHD format enablement on tvOS may still be
-//     pending Apple. Verify on a real Apple TV + AVR before relying on it.
+//   * As of tvOS 26 betas, TrueHD passthrough enablement may still be pending
+//     Apple, and lossless support is unconfirmed. Verify on a real Apple TV +
+//     AVR before relying on it.
 //
 // This is a scaffold against the documented symbol. Confirm the exact property
 // wiring against the shipping SDK — sections marked VERIFY may move.

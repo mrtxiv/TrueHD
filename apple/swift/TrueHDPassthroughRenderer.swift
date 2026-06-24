@@ -12,6 +12,9 @@
 // reachable via AVPlayer. Gate this behind a runtime probe and fall back to the
 // AC-3 companion path; do not advertise it as working until verified on-device.
 //
+// Competing hypothesis: `TrueHDPassthrough.swift` tries the same thing via
+// AVPlayer. It is unknown which (if either) ships. See ../../VERIFICATION.md §E.
+//
 // Building blocks (tvOS 26):
 //   * AVSampleBufferAudioRenderer + AVSampleBufferRenderSynchronizer (no AVPlayer)
 //   * AudioCodecContentSource passthrough: kAudioCodecContentSource_Passthrough /
