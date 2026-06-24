@@ -62,3 +62,30 @@ Apple-decoder paths are license-free for the app; lossless-no-decode only via
 external-hardware passthrough (unbuilt); and the AC-3 companion is reliably
 present (mandatory on Blu-ray) though you may need to split it from a combined
 track. Nothing contradicts the AC-3-companion design already implemented.
+
+## Deep code search across ALL of GitHub (the decisive test)
+
+If a hidden Apple-native TrueHD path existed, code using it would exist. It does
+not. GitHub code search (every public repo):
+
+| Query | Hits | Meaning |
+|---|---|---|
+| `kAudioFormatMLP` | 2 — both **Symbian OS** dumps | No such constant in Apple CoreAudio anywhere |
+| `TrueHD AudioConverterNew` (Swift) | **0** | Nobody decodes TrueHD with Apple's AudioConverter |
+| `'mlp '` / `mlp trhd` AudioComponent | **0** | Nobody finds/registers an Apple MLP decoder component |
+| `AV_CODEC_ID_TRUEHD` (Swift) | 10 — **all FFmpeg-based** | Every Swift TrueHD project decodes with FFmpeg |
+| repo search: apple/ios/tvos truehd decoder | **0** | No Apple-native TrueHD decoder repo exists |
+
+The 10 `AV_CODEC_ID_TRUEHD` hits are KSPlayer (+forks), SwiftFFmpeg, AetherEngine,
+Rivulet — all FFmpeg. Notable in-code confirmations:
+- **Rivulet** (`FFmpegRemuxSession.swift`): *"Audio transcode needed for DTS/TrueHD
+  (AVPlayer can't decode them)."*
+- **KSPlayer** maps TrueHD→`'mlpa'` `CMFormatDescription`, but the ASBD is built
+  from **decoded PCM params** (`av_get_bytes_per_sample`) — FFmpeg decodes to PCM;
+  `'mlpa'` is only a track-metadata tag, NOT compressed passthrough to Apple.
+
+### Conclusion (code-level, all of GitHub)
+No repository, fork, or hidden project plays TrueHD via an Apple decoder. Every
+one that plays it bundles FFmpeg and decodes itself; the rest passthrough to an
+external receiver. The "let Apple decode TrueHD" path produces zero code on
+GitHub because the decoder does not exist.
