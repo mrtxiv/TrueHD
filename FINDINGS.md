@@ -20,7 +20,7 @@ run somewhere, and Apple ships no TrueHD decoder on any platform.
 | If you relax... | You get | Cost |
 | --- | --- | --- |
 | **#6** (allow non-GPL bundled decoder) | Lossless bed, all 3 platforms, on-device, no license | Something decodes — but via Apache-2.0 `truehdd`, **not GPL/LGPL**, **not your code**. Atmos objects still patent-encumbered. |
-| **#5** (allow external hardware) | Lossless + Atmos | tvOS 26 only (`AVAudioContentSource.passthrough` to an AVR); not iOS/macOS |
+| **#5** (allow external hardware) | Lossless + Atmos *(if it works)* | tvOS 26 only, bitstream to an AVR; **unproven for lossless TrueHD** (no shipping impl; betas expose no toggle); not iOS/macOS |
 | **#1** (allow lossy) | AC-3/E-AC-3 companion via Apple's *own* decoder | Lossy 5.1; **the only** option needing no decode-by-you, no hardware, all 3 platforms |
 | **#4b** (pay Dolby) | Lossless + Atmos, all platforms, on-device | A paid Dolby (and DTS) license — **this is what Infuse does** |
 
@@ -56,11 +56,18 @@ run somewhere, and Apple ships no TrueHD decoder on any platform.
   ([Firecore](https://community.firecore.com/t/can-infuse-pro-play-dts-hd-master-audio-and-dolby-truehd-sound-tracks/17384/4),
   [Firecore support](https://support.firecore.com/hc/en-us/articles/217735707-Audio-Options-Capabilities))
 
-### tvOS 26 passthrough = external hardware, tvOS only
-- `AVAudioContentSource.passthrough` sends the untouched bitstream to an AVR,
-  which decodes. Needs external hardware (fails #5) and is tvOS-only (fails #2).
+### tvOS 26 passthrough = external hardware, tvOS only, and unproven for lossless TrueHD
+- tvOS 26 passthrough is intended to send a bitstream to an AVR, which decodes.
+  It needs external hardware (fails #5) and is tvOS-only (fails #2).
   ([FlatpanelsHD](https://www.flatpanelshd.com/news.php?subaction=showfull&id=1749568309),
   [Swiftfin #1641](https://github.com/jellyfin/Swiftfin/issues/1641))
+- **Caveat (verified):** whether it carries **lossless** TrueHD/DTS-HD MA (vs.
+  just DD/DD+/DTS) is **unconfirmed**. Early betas reportedly expose no toggle;
+  observers note macOS does not passthrough TrueHD/DTS. The two tracking issues
+  (Swiftfin #1641, KSPlayer #862) are **both closed with no implementation**. The
+  `AVAudioContentSource` enum and `kAudioCodecContentSource_Passthrough = 42` are
+  real SDK symbols, but no shipping code drives lossless TrueHD through them. See
+  `VERIFICATION.md`.
 
 ### Licenses & patents on the bundled-decoder path
 - `truehdd` / `truehd` crate is **Apache-2.0** — permissive, App-Store-clean,
@@ -70,9 +77,13 @@ run somewhere, and Apple ships no TrueHD decoder on any platform.
   Dolby's**. ([Apache FAQ](https://www.apache.org/foundation/license-faq.html))
 - Foundational **MLP lossless patents expired ~2017**, so the lossless **bed**
   is very likely patent-clear. ([Wikipedia: MLP](https://en.wikipedia.org/wiki/Meridian_Lossless_Packing))
-- **Atmos object (OAMD) patents are live through ~2046** and Dolby still
-  licenses object decoding — so on-device Atmos *objects* cannot be both free
-  and patent-clean. ([Dolby 10-K](https://s27.q4cdn.com/365963565/files/doc_financials/2022/q4/5ac8daf9-e853-43df-b76c-93df1280669f.pdf))
+- **Atmos object (OAMD) patents remain in force** (filings from the 2010s run
+  ~20 years, i.e. well into the 2030s–2040s) and Dolby still licenses object
+  decoding — so on-device Atmos *objects* cannot be both free and patent-clean.
+  (A precise "expires in YYYY" date should be confirmed per-patent at the USPTO;
+  the durable fact is that object decoding is still licensed, which is why even
+  Infuse decodes only the bed and drops Atmos objects.)
+  ([Dolby 10-K](https://s27.q4cdn.com/365963565/files/doc_financials/2022/q4/5ac8daf9-e853-43df-b76c-93df1280669f.pdf))
 - GPL/LGPL + App Store is a real, never-cleanly-resolved conflict (VLC), which
   is why FFmpeg's LGPL decoder is the wrong choice and Apache-2.0 is the right
   one. ([FSF on VLC](https://www.fsf.org/blogs/licensing/vlc-enforcement))

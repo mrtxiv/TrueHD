@@ -3,11 +3,17 @@
 // One entry point that picks the best legal, no-self-decode path for a TrueHD
 // file at runtime, based on what's actually connected:
 //
-//   * tvOS + HDMI route to an AVR  -> lossless TrueHD passthrough via
-//                                     AVSampleBufferAudioRenderer (no AVPlayer,
-//                                     no decode, Atmos preserved).
-//   * otherwise                    -> AC-3 companion via Apple's codec
-//                                     (no decode by you, lossy 5.1, all platforms).
+//   * tvOS + HDMI route to an AVR  -> EXPERIMENTAL lossless TrueHD passthrough
+//                                     via AVSampleBufferAudioRenderer. This path
+//                                     is UNPROVEN (see ../../VERIFICATION.md §E):
+//                                     no shipping code demonstrates compressed
+//                                     TrueHD passthrough through this renderer,
+//                                     the enable API is unconfirmed, and it may
+//                                     require AVPlayer. It is probe-gated and
+//                                     falls back to AC-3 on any failure.
+//   * otherwise                    -> AC-3 companion via Apple's codec — the
+//                                     PROVEN default (no decode by you, no
+//                                     AVPlayer, no HLS, lossy 5.1, all platforms).
 //
 // Neither path decodes TrueHD in your app or bundles a TrueHD decoder. The
 // difference is forced by hardware: only an external AVR can decode TrueHD

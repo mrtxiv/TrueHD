@@ -8,8 +8,10 @@
 #   * Decodes the lossless bed bit-exactly -> lossless (#1, bed).
 #
 # Caveat baked in on purpose: this scaffold decodes/outputs the channel BED.
-# Atmos OBJECT rendering is covered by live Dolby patents (~2046); do not ship
-# object rendering without a Dolby license. See ../FINDINGS.md.
+# Atmos OBJECT rendering is covered by live Dolby patents (in force well into the
+# 2030s-2040s); do not ship object rendering without a Dolby license. The
+# foundational MLP lossless patents expired ~2017, so the BED is very likely
+# patent-clear, but get counsel before commercial ship. See ../FINDINGS.md.
 
 [package]
 name = "truehd-decoder-core"

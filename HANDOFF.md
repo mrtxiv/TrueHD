@@ -32,10 +32,13 @@ forms:
 
 1. **A separate AC-3 or E-AC-3 track** in the container (common in MKV files).
    Just select that track.
-2. **An AC-3 "core" embedded inside the TrueHD stream.** On Blu-ray, a TrueHD
-   track is required to carry an AC-3 core for legacy decoders, so this always
-   exists on disc-sourced content. You extract the AC-3 substream from the
-   combined stream.
+2. **AC-3 frames interleaved with the TrueHD frames in one track.** On Blu-ray, a
+   TrueHD track is *required* to carry a Dolby Digital (AC-3) fallback, so it
+   always exists on disc-sourced content. Note this is **not a shared "core"**
+   like DTS-HD MA — the AC-3 and TrueHD bitstreams have no data in common; they
+   are two independent streams whose frames alternate in the same track. You
+   extract by keeping the AC-3 frames and discarding the TrueHD frames.
+   ([Wikipedia: Dolby TrueHD](https://en.wikipedia.org/wiki/Dolby_TrueHD))
 
 If a file is genuinely TrueHD-only with no AC-3 anywhere (rare), this approach
 has nothing to play — there is no audio without decoding TrueHD.

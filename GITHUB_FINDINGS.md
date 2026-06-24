@@ -21,11 +21,15 @@ ships no TrueHD decoder. ([KSPlayer #875](https://github.com/kingslay/KSPlayer/i
 
 ## Finding 2 — Passthrough is the only no-decode lossless route, and it's unbuilt
 
-**Swiftfin #1641** and **KSPlayer #862** both request `AVAudioContentSource.passthrough`
-(tvOS 26 / iOS 26) for lossless TrueHD. Both are **feature requests with no
-working implementation** — just links to Apple's doc. tvOS 26 AudioToolbox adds
-`kAudioCodecContentSource_Passthrough = 42`. Passthrough sends the bitstream to
-an external AVR (external hardware decodes). ([Swiftfin #1641](https://github.com/jellyfin/Swiftfin/issues/1641),
+**Swiftfin #1641** and **KSPlayer #862** both reference `AVAudioContentSource.passthrough`
+(tvOS 26 / iOS 26) for lossless TrueHD. Both are **now CLOSED with no working
+implementation** — #1641 is **closed as "not planned"**, #862 is **closed** —
+just links to Apple's doc. The constant `kAudioCodecContentSource_Passthrough = 42`
+is real and present in the shipping iOS/tvOS/macOS 26 SDK `AudioToolbox/AudioCodec.h`
+(verified — see `VERIFICATION.md`); the header calls it *"Passthrough content (use
+only if source information is not available)."* Passthrough is intended to send a
+bitstream to an external AVR that decodes — but whether it carries **lossless**
+TrueHD is unconfirmed in betas. ([Swiftfin #1641](https://github.com/jellyfin/Swiftfin/issues/1641),
 [KSPlayer #862](https://github.com/kingslay/KSPlayer/issues/862))
 
 ## Finding 3 — Everyone who plays TrueHD *decodes it themselves*
@@ -137,33 +141,45 @@ players (incl. Chinese ones). `truehd language:swift` alone returns 254 files.
 Every player that actually plays TrueHD does ONE of: bundle FFmpeg/VLC/mpv, or
 passthrough to external hardware. The smoking gun:
 
-- **kingslay/FFmpegKit** (`BuildFFMPEG.swift`) — the FFmpeg build behind KSPlayer
-  (the flagship Chinese player) compiles **`--enable-decoder=truehd`**. That is
-  literally how KSPlayer/OopsPlayer "play TrueHD": a bundled FFmpeg decoder.
-  Same in **mpvkit/MPVKit**.
-- **Plozz** (`EngineRouting.swift`) & **Reef** (`PlaybackEngine.swift`): route
-  "DTS/DTS-HD/**TrueHD**, MKV" to **libmpv / MobileVLCKit**, AVPlayer only for
-  MP4/AAC/Atmos(JOC). Bundled decoder for TrueHD, explicitly.
-- **VortX** (`AudioOutputMode.swift`): passthrough = *"Bitstream Dolby/DTS
-  untouched to an AV receiver that decodes them itself (lossless TrueHD/DTS-HD
-  MA), rather than decoding to PCM here. For a real AVR."* — external hardware.
-- **Moonfin-Core** (`AppleTvVideoChannel.swift`, Chinese), **OmniPlay** (开源,
-  Chinese), **chenqi92/my-nas** (Chinese): treat `truehd`/`mlp` as the
-  Atmos/“needs special handling” family; HDMI route lists `truehd` as an
-  external-decode passthrough codec, not an Apple-decoded one.
-- **AVAudioContentSource** code hits (lsvr_apmp-converter, AmbiMux) use
-  `.appleAV_Spatial_Offline` — Apple's **spatial-audio offline ENCODER** (APAC),
-  not a TrueHD decoder. The content-source API is for passthrough/spatial encode,
-  never TrueHD decode.
+- **FFmpeg builds bundle a TrueHD decoder.** A real Apple-platform FFmpeg build
+  script enables **`--enable-decoder=truehd`** (verified in `abadari3/CastTV`'s
+  `scripts/build-ffmpeg.sh`); KSPlayer-family players (via FFmpegKit) and MPVKit
+  do the same. That is how those players "play TrueHD": a **bundled FFmpeg
+  decoder**, not an Apple decoder. *(Earlier drafts attributed the exact flag to
+  `kingslay/FFmpegKit/BuildFFMPEG.swift`; that specific file/line is unverified —
+  the practice itself is confirmed.)*
+- **VortX** (`VortXTV/VortX`) — **real, and mpv-based.** Its
+  `MPVMetalViewController.swift` configures mpv spdif/bitstream passthrough to an
+  AVR (with a known stereo-route freeze, issue #78). So VortX = "bundle mpv; mpv
+  passes the bitstream through." *(An earlier draft quoted a file
+  `AudioOutputMode.swift`; that exact file/quote is NOT found on GitHub — treat
+  the verbatim quote as unverified. The mpv-passthrough behavior IS verified.)*
+- **Moonfin-Core** (`Moonfin-Client/Moonfin-Core`) — **real.**
+  `tvos/Runner/Playback/AppleTvVideoChannel.swift` routes the Atmos family (incl.
+  `truehd`/`mlp`, when `atmosPassthrough && isAtmosFamily && audioChannels != 2`)
+  to a `.native` backend via `configurePreferredBackendForNextPlayback(.native)`
+  (verified verbatim). **But** that native backend is a custom `AudioRenderer`
+  whose code calls `decodePacket(...)` — i.e. it appears to **decode**, not
+  bitstream-passthrough. So Moonfin is **not** a confirmed
+  "Apple/OS passes TrueHD through untouched" example.
+- **Unverifiable citations removed.** Earlier drafts cited `Plozz` /
+  `EngineRouting.swift`, `Reef` / `PlaybackEngine.swift`, `OmniPlay`,
+  `chenqi92/my-nas`, and `lsvr_apmp-converter` / `AmbiMux` as corroboration.
+  GitHub repo/code searches did **not** confirm those repos or the quoted files
+  (see `VERIFICATION.md`). They are dropped here because they could not be
+  verified — not asserted as fact.
 
 ### What every real player does with TrueHD (observed, not asserted)
-| Approach | Example repos | Apple decodes TrueHD? |
+| Approach | Verified example repos | Apple decodes TrueHD? |
 |---|---|---|
-| Bundle FFmpeg (`--enable-decoder=truehd`) | KSPlayer/FFmpegKit, MPVKit, AetherEngine | No |
-| Bundle VLC/mpv | Plozz, Reef | No |
-| Passthrough to AVR | VortX, Swiftfin #1641, Moonfin | No — external HW |
-| AC-3 companion / transcode | Rivulet, AetherEngine, Synology patchers | No (Apple decodes AC-3/EAC3) |
+| Bundle FFmpeg (`--enable-decoder=truehd`) | abadari3/CastTV, KSPlayer/FFmpegKit, MPVKit, AetherEngine | No |
+| Bundle mpv (mpv does spdif passthrough) | VortXTV/VortX | No |
+| Transcode TrueHD → EAC3/FLAC bridge | superuser404notfound/Sodalite (AetherEngine) | No |
+| FFmpeg-decode TrueHD → PCM (AC-3/EAC3 passthrough only) | l984-451/Rivulet | No |
+| Route Atmos family to a "native" decode backend | Moonfin-Client/Moonfin-Core | No (custom decoder) |
 
-Across ~20 repos read this round, in Swift/ObjC/C, English and Chinese: **zero**
-use an Apple TrueHD decoder, because none exists. The deeper the dig, the more
-uniformly it confirms the same three options already on this branch.
+Every **verified** repo above does one of: bundle a decoder (FFmpeg/mpp/mpv),
+transcode, or FFmpeg-decode TrueHD to PCM. **None** uses an Apple TrueHD decoder
+(there isn't one), and **none** demonstrates lossless TrueHD compressed
+passthrough via `AVSampleBufferAudioRenderer` without AVPlayer. See
+`VERIFICATION.md` for the per-repo evidence.

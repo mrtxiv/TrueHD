@@ -21,6 +21,9 @@ choices and a router to switch between them:
 
 ## File map
 
+- [`VERIFICATION.md`](VERIFICATION.md) — **read this first.** Every load-bearing
+  claim in this repo, its primary source, and a true/false verdict (audited
+  2026-06-24). Records what was corrected, including citations that did not hold up.
 - [`FINDINGS.md`](FINDINGS.md) — the full feasibility analysis + sources.
 - [`AudioDecoderProbe.swift`](AudioDecoderProbe.swift) — **run this first** on
   your target device. Enumerates OS audio codecs; confirms no TrueHD decoder
@@ -65,9 +68,9 @@ pipeline.stop()
    TrueHD-only title has nothing for this path to play — use `decoder-core/`.
 3. **The ring buffer in `AC3DecodePipeline` is a scaffold.** Swap its `NSLock`
    for atomics before relying on it in a real-time audio context.
-4. **Lossless ≠ free of patents.** The MLP lossless core expired ~2017, but get
-   counsel before commercial ship; Atmos *objects* remain patented (~2046) and
-   are intentionally out of scope here.
+4. **Lossless ≠ free of patents.** The foundational MLP lossless patents expired
+   ~2017, but get counsel before commercial ship; Atmos *objects* remain patented
+   (in force well into the 2030s–2040s) and are intentionally out of scope here.
 
 ## What this repo does NOT do
 

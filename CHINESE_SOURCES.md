@@ -1,5 +1,16 @@
 # Chinese-language forum & project research (corroboration)
 
+> **Verification caveat (2026-06):** the specific Chinese-language quotes and
+> forum URLs below were collected as paraphrased/translated corroboration and
+> have **not** each been independently re-fetched and verified verbatim (several
+> hosts are region-restricted). Treat them as supporting color, not primary
+> evidence. The load-bearing facts of this repo do **not** depend on them — they
+> rest on the primary, re-verified sources catalogued in `VERIFICATION.md`
+> (Apple SDK headers, Apple docs, Wikipedia, Firecore, and direct reads of the
+> cited GitHub repos). The one substantive claim here — that Dolby gates TrueHD
+> decode behind a paid license — is independently confirmed by the Infuse
+> (licensed) evidence in `FINDINGS.md`.
+
 Searched V2EX, Zhihu (知乎), Chinese tech blogs (蓝点网, IT之家, 什么值得买, 少数派),
 and Chinese-developed players (OopsPlayer, VidHub, nPlayer, IINA, NipaPlay,
 SGPlayer). The conclusion is the same as the English-source research, and the

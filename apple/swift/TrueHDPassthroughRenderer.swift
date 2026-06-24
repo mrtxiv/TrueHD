@@ -1,9 +1,16 @@
 // TrueHDPassthroughRenderer.swift  (tvOS 26+)
 //
-// The breakthrough path: play LOSSLESS Dolby TrueHD with NO AVPlayer and NO
-// decoding in your app, by enqueueing the untouched compressed TrueHD bitstream
-// to AVSampleBufferAudioRenderer (which accepts compressed buffers) and letting
-// tvOS passthrough route it over HDMI to an AV receiver that decodes.
+// EXPERIMENTAL / UNPROVEN (see ../../VERIFICATION.md §E). The intended path: play
+// LOSSLESS Dolby TrueHD with NO AVPlayer and NO decoding in your app, by
+// enqueueing the untouched compressed TrueHD bitstream to AVSampleBufferAudioRenderer
+// and letting tvOS passthrough route it over HDMI to an AV receiver that decodes.
+//
+// WARNING — this is not known to work. AVSampleBufferAudioRenderer *decompresses*
+// (decodes) audio; with no OS TrueHD decoder, 'mlpa' buffers may simply fail
+// rather than pass through. No shipping code demonstrates this, the enable call
+// below is an unconfirmed stub, and tvOS-26 lossless passthrough may only be
+// reachable via AVPlayer. Gate this behind a runtime probe and fall back to the
+// AC-3 companion path; do not advertise it as working until verified on-device.
 //
 // Building blocks (tvOS 26):
 //   * AVSampleBufferAudioRenderer + AVSampleBufferRenderSynchronizer (no AVPlayer)
