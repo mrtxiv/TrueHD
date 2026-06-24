@@ -129,3 +129,41 @@ Therefore even an undiscovered/hidden repo could only do one of the three things
 every visible repo does: bundle FFmpeg (decode itself), passthrough to external
 hardware, or play the AC-3 companion via Apple's codec. None is "Apple decodes
 TrueHD for free," because that capability is absent from the OS itself.
+
+## Deeper dig (round 3) — reading ~20 actual player repos
+
+Broadened to single-term + sort-by-stars and read the real audio code of many
+players (incl. Chinese ones). `truehd language:swift` alone returns 254 files.
+Every player that actually plays TrueHD does ONE of: bundle FFmpeg/VLC/mpv, or
+passthrough to external hardware. The smoking gun:
+
+- **kingslay/FFmpegKit** (`BuildFFMPEG.swift`) — the FFmpeg build behind KSPlayer
+  (the flagship Chinese player) compiles **`--enable-decoder=truehd`**. That is
+  literally how KSPlayer/OopsPlayer "play TrueHD": a bundled FFmpeg decoder.
+  Same in **mpvkit/MPVKit**.
+- **Plozz** (`EngineRouting.swift`) & **Reef** (`PlaybackEngine.swift`): route
+  "DTS/DTS-HD/**TrueHD**, MKV" to **libmpv / MobileVLCKit**, AVPlayer only for
+  MP4/AAC/Atmos(JOC). Bundled decoder for TrueHD, explicitly.
+- **VortX** (`AudioOutputMode.swift`): passthrough = *"Bitstream Dolby/DTS
+  untouched to an AV receiver that decodes them itself (lossless TrueHD/DTS-HD
+  MA), rather than decoding to PCM here. For a real AVR."* — external hardware.
+- **Moonfin-Core** (`AppleTvVideoChannel.swift`, Chinese), **OmniPlay** (开源,
+  Chinese), **chenqi92/my-nas** (Chinese): treat `truehd`/`mlp` as the
+  Atmos/“needs special handling” family; HDMI route lists `truehd` as an
+  external-decode passthrough codec, not an Apple-decoded one.
+- **AVAudioContentSource** code hits (lsvr_apmp-converter, AmbiMux) use
+  `.appleAV_Spatial_Offline` — Apple's **spatial-audio offline ENCODER** (APAC),
+  not a TrueHD decoder. The content-source API is for passthrough/spatial encode,
+  never TrueHD decode.
+
+### What every real player does with TrueHD (observed, not asserted)
+| Approach | Example repos | Apple decodes TrueHD? |
+|---|---|---|
+| Bundle FFmpeg (`--enable-decoder=truehd`) | KSPlayer/FFmpegKit, MPVKit, AetherEngine | No |
+| Bundle VLC/mpv | Plozz, Reef | No |
+| Passthrough to AVR | VortX, Swiftfin #1641, Moonfin | No — external HW |
+| AC-3 companion / transcode | Rivulet, AetherEngine, Synology patchers | No (Apple decodes AC-3/EAC3) |
+
+Across ~20 repos read this round, in Swift/ObjC/C, English and Chinese: **zero**
+use an Apple TrueHD decoder, because none exists. The deeper the dig, the more
+uniformly it confirms the same three options already on this branch.
