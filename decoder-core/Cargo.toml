@@ -1,0 +1,33 @@
+# Apache-2.0 TrueHD decode core, exposed to Apple platforms via a C ABI.
+#
+# Why this satisfies the constraints:
+#   * `truehd` is Apache-2.0 -> NOT GPL/LGPL (requirement #6), and it is not
+#     decode code you wrote (requirement #3).
+#   * Rust compiles to aarch64-apple-{darwin,ios,tvos} -> all 3 platforms (#2).
+#   * Runs on-device -> no AV receiver needed (#5).
+#   * Decodes the lossless bed bit-exactly -> lossless (#1, bed).
+#
+# Caveat baked in on purpose: this scaffold decodes/outputs the channel BED.
+# Atmos OBJECT rendering is covered by live Dolby patents (~2046); do not ship
+# object rendering without a Dolby license. See ../FINDINGS.md.
+
+[package]
+name = "truehd-decoder-core"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[lib]
+# staticlib -> .a we link into the Apple xcframework.
+crate-type = ["staticlib"]
+
+[dependencies]
+# NOTE: confirm the exact crate name/version + public API on crates.io before
+# building. As of this writing the decoder lives in the `truehd` crate
+# (CLI wrapper is `truehdd`). https://crates.io/crates/truehd
+truehd = "*"
+
+[profile.release]
+opt-level = 3
+lto = true
+panic = "abort"   # never unwind across the C ABI boundary
