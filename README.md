@@ -72,10 +72,11 @@ pipeline.stop()
 3. **The ring buffer in `AC3DecodePipeline` is a scaffold.** Swap its `NSLock`
    for atomics before relying on it in a real-time audio context.
 4. **Lossless ≠ free of patents.** The *original* MLP core (~1998) has largely
-   lapsed, but TrueHD as actually encoded (MLP FBA) and Dolby's issued patents
-   run to ~2046, and the `truehdd` crate is research-only by its authors. Do NOT
-   ship the bundled-decoder tier as "license-free" — get counsel. Atmos *objects*
-   remain patented (~2046) and are intentionally out of scope here. See
+   lapsed, but TrueHD as actually encoded (MLP FBA) adds later tools of
+   **uncertain** patent status, and the `truehdd` crate is research-only by its
+   authors. Do NOT ship the bundled-decoder tier as "license-free" — it's legally
+   uncertain; get counsel. Atmos *objects* are separately patent-encumbered
+   (Dolby licenses object decoding) and are intentionally out of scope here. See
    [`FACT_CHECK.md`](FACT_CHECK.md).
 
 ## What this repo does NOT do

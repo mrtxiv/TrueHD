@@ -56,7 +56,11 @@ xcodebuild -create-xcframework \
 
 ## What this does and does NOT give you
 - DOES: lossless TrueHD **channel bed** (5.1/7.1) PCM on all 3 platforms,
-  on-device, no GPL/LGPL, no decoder you wrote, no AV receiver, no Dolby payment.
+  on-device, no GPL/LGPL, no decoder you wrote, no AV receiver.
+  ⚠️ **NOT necessarily "no Dolby payment":** the bed decode is patent-UNCERTAIN
+  (truehdd is research-only; later MLP/FBA tools' patent status is unresolved;
+  Apache-2.0 ≠ a Dolby patent grant). Research-only until cleared by counsel.
+  See ../FACT_CHECK.md.
 - Does NOT (by design): render Dolby Atmos **objects**. Object decoding/rendering
   is covered by live Dolby patents (~2046). Fold objects to the bed, or license
   Dolby for true object rendering. See ../FINDINGS.md.

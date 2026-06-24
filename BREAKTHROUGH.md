@@ -26,9 +26,10 @@ one price (unavoidable) is an external AVR and tvOS-only.
    Swift files/quotes from "Moonfin-Core (`AppleTvVideoChannel.swift`)" and
    "Rivulet (`FFmpegAudioDecoder.swift`, `DirectPlayPipeline.swift`)" as proof
    that real players do this. Fact-check (see `FACT_CHECK.md`) could **not verify
-   them**: Moonfin is Flutter+MPVKit (and its Smart-TV build has an OPEN
-   "Playback fails with TrueHD" bug, #179); the real `Rivulet` is an MPV app
-   without those files. Treat those quotes as **unverified / likely fabricated**.
+   them**: Moonfin is Flutter+MPVKit (its iOS/tvOS playback is MPV, not the cited
+   Swift); the real `Rivulet` is an MPV app without those files. Treat those
+   quotes as **unverified / likely fabricated**. (An earlier note cited Moonfin
+   "Smart-TV #179" as evidence — withdrawn: that repo is Tizen/webOS, not Apple TV.)
    The one REAL corroboration — **AetherEngine** — does the opposite: it
    stream-copies **E-AC-3+JOC** for Atmos passthrough and **transcodes** TrueHD
    to E-AC-3/FLAC rather than passing it through. Even Dolby's own `daaplay`

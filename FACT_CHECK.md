@@ -19,35 +19,50 @@ reporting, the actual source repos cited). Verdicts: ✅ confirmed, ❌ wrong,
 ## Errors found — corrected in this commit
 
 ### ❌1  `AVAudioContentSource.passthrough` is **not** the HDMI bitstream switch
-The original "breakthrough" hung on this symbol. It is actually the
-`contentSource` value of **`AVAudioConverter`**, controlling **Dynamic Range
-Compression (DRC)**. Its sibling values are `.spatial`, `.traditional`,
-`.capture`, `.music`, etc.; `.passthrough` means "apply DRC without tailoring it
-to a content type." It has nothing to do with HDMI bitstream-out. The press
-coverage (FlatpanelsHD/AppleInsider) that named it as "the passthrough API" is
-where this repo's error came from — they pattern-matched the name to the rumored
-feature. *Already corrected in `BREAKTHROUGH.md`, `TrueHDPassthroughRenderer.swift`,
-`TrueHDPassthrough.swift` in the prior commit; restated here for the record.*
+The original "breakthrough" hung on this symbol. Per the authoritative SDK diff
+(dotnet/macios AVFAudio xcode26.0 b1), `AVAudioContentSource` lives in
+**`AVAudioSettings.h`** as a value for the **audio ENCODER** key
+`AVEncoderContentSourceKey` (alongside `AVEncoderDynamicRangeControlConfigurationKey`).
+`AVAudioContentSource_Passthrough` means "passthrough content (use only if source
+information is not available)" — i.e. a DRC/encoder content-type descriptor. It
+has **nothing to do with HDMI bitstream-out**. Decisively, the same SDK diff
+shows **no new passthrough API on AVAudioSession, AVAudioFormat, AVPlayer, or
+AVSampleBufferAudioRenderer**. The press coverage (FlatpanelsHD/AppleInsider)
+named this enum as "the passthrough API" by pattern-matching the name — and this
+repo inherited that error. *Corrected in `BREAKTHROUGH.md`,
+`TrueHDPassthroughRenderer.swift`, `TrueHDPassthrough.swift`.*
+
+(Self-check note: an earlier version of this file said the enum is "the
+`contentSource` value of AVAudioConverter." More precisely it's the
+`AVEncoderContentSourceKey` in AVAudioSettings.h; AVAudioConverter consumes
+encoder settings, so it surfaces there too, but the canonical home is the encoder
+keys. The conclusion — DRC descriptor, not a bitstream switch — is unchanged.)
 
 ### ❌2  "MLP lossless core expired ~2017" → the bundled-decoder path is **not** provably patent-clean
 This was the legal foundation for the `decoder-core/` (truehdd) "lossless" tier.
-It does not hold:
-- TrueHD/MLP **remains under multiple live Dolby patents** — Dolby's issued
-  patents run "at various times **through December 2046**." The *original* MLP
-  patents (filed ~1998) have largely lapsed, but TrueHD as actually encoded
-  (MLP **FBA**, 16-ch) uses later coding tools that are not all expired.
-- The `truehdd` crate's **own authors** state it "is **not intended for
-  production environments or consumer playback systems**" and is "for research
-  and development purposes."
-- Apache-2.0 grants **copyright** rights and only the *contributors'* patent
-  rights — explicitly **not Dolby's**. A permissive license does not make a
-  patented algorithm royalty-free to ship.
+It does not hold — though the honest verdict is **"uncertain," not "definitely
+encumbered to 2046"** (correcting my own first pass, which overstated this):
+- The *original* MLP patents (filed ~1998) have **largely lapsed**. So the repo's
+  "MLP core expired ~2017" is partly right for the original core.
+- BUT TrueHD as actually encoded (MLP **FBA**, 16-ch) adds later coding tools
+  whose patent status is **not all confirmed expired**, and "MLP/TrueHD is still
+  covered by several patents" per multiple sources. The exact expiry of the
+  specific patents needed to decode a modern TrueHD stream is **unresolved here**.
+- ⚠️ Self-correction: the "**through December 2046**" figure is Dolby's **entire
+  issued patent portfolio** (from their 10-K) — Atmos, AC-4, Dolby Vision, etc. —
+  **not** specifically the TrueHD/MLP lossless decode. My earlier wording implied
+  2046 applies to TrueHD decode; that was a conflation. Atmos *objects* are the
+  clearly-live-to-~2046 part; the lossless **bed** decode is genuinely uncertain.
+- The `truehdd` crate's **own authors** state (verified verbatim in its README)
+  it "is **not intended for production environments or consumer playback
+  systems**." Licensed Apache-2.0.
+- Apache-2.0 grants **copyright** and only the *contributors'* patent rights —
+  **not Dolby's**. A permissive license does not make a patented algorithm
+  royalty-free to ship.
 
-So "bundle truehdd and ship lossless TrueHD, license-free" is **not safe to
-claim**. Treat the bundled-decoder tier as research-only unless cleared by
-counsel. The Atmos-objects-to-2046 caveat the repo already had is correct but
-was the *smaller* problem — the lossless **bed decode itself** is the bigger
-uncertainty.
+Net: "bundle truehdd and ship lossless TrueHD, license-free" is **not safe to
+claim** — but neither is "definitely infringing." It is **legally uncertain**;
+treat the bundled-decoder tier as research-only unless cleared by counsel.
 
 ### ⚠️3  Fabricated / unverifiable code citations in the "breakthrough" evidence
 The strongest-sounding evidence was specific quotes from named source files.
@@ -59,9 +74,12 @@ Checked — they do not hold up:
   found**. Treat those quotes as **unverified / likely fabricated**.
 - **"Moonfin-Core (`AppleTvVideoChannel.swift`) →
   `configurePreferredBackendForNextPlayback(.native)`"**: Moonfin is real but is
-  **Flutter + MPVKit**, not native Swift; the cited file/method was not found,
-  and its Smart-TV variant has an **open bug "Playback fails with TrueHD audio
-  codec"** (#179). The specific citation is unverified.
+  **Flutter + MPVKit**, not native Swift; the cited file/method was not found.
+  ⚠️ Self-correction: my first pass cited Moonfin Smart-TV issue #179 ("Playback
+  fails with TrueHD") as Apple TV evidence — but the **Smart-TV repo targets
+  Tizen/webOS (Samsung/LG), NOT Apple TV/tvOS**, so #179 is irrelevant to the
+  Apple-TV passthrough question. Withdrawn. The citation remains unverified
+  regardless.
 - **`kAudioCodecContentSource_Passthrough = 42`** (specific enum value):
   unverified; do not rely on the literal value.
 
@@ -75,9 +93,11 @@ advanced 2026 engine does **not** bitstream-passthrough TrueHD.
 
 The exact dream — *lossless TrueHD + app decodes nothing + no AVPlayer + no
 external hardware* — is still the empty set, and even the *with-AVR, no-AVPlayer*
-version is **unproven** (no public tvOS 26 enable API; Swiftfin #1641 / KSPlayer
-#862 still open; even Dolby's own `daaplay` decodes to PCM and explicitly does
-**not** use AVSampleBufferAudioRenderer or passthrough).
+version is **unproven**. The iOS/tvOS 26 SDK diff shows **no** new passthrough
+API on AVAudioSession/AVAudioFormat/AVPlayer/AVSampleBufferAudioRenderer; Swiftfin
+#1641 / KSPlayer #862 are still open with no sample; and even Dolby's own
+`daaplay` decodes to PCM and explicitly does **not** use AVSampleBufferAudioRenderer
+or passthrough.
 
 The closest thing to a breakthrough that is **real, shippable today, and matches
 your constraints** is the one AetherEngine actually ships:
@@ -91,9 +111,9 @@ DD+ instead of the AC-3 5.1). Selecting/playing that track via Apple's codec get
 you **Atmos, losslessly routed, license-free** — strictly better than the AC-3
 5.1 companion, while keeping every "Apple does everything" constraint. It is not
 *TrueHD-lossless*, but it is the best real-world audio you can ship with zero
-decode and zero license. **Bonus:** E-AC-3's last patent (US7516064) expired
-2026-01-30, so E-AC-3 is now patent-free too — though moot, since Apple's license
-already covers the app.
+decode and zero license. **Bonus:** E-AC-3's last patent (US7516064) is
+**reportedly** expired as of 2026-01-30 (Phoronix; headline says "might now be
+expired") — moot anyway, since Apple's platform license already covers the app.
 
 ## Net
 
@@ -104,16 +124,37 @@ already covers the app.
 - **Add a DD+/E-AC-3-JOC tier** as the highest-quality license-free path — that's
   the genuine, ship-today win.
 
+## Fact-check of this fact-check (self-audit)
+
+Re-verified the load-bearing claims against primary sources. Outcome:
+
+| Claim | Re-check result |
+|---|---|
+| `AVAudioContentSource` is a DRC/encoder descriptor, not a bitstream switch | ✅ **Strengthened.** SDK diff (dotnet/macios AVFAudio xcode26.0 b1) confirms it's `AVEncoderContentSourceKey` in `AVAudioSettings.h`, and shows **no** passthrough API on AVAudioSession/AVPlayer/AVSampleBufferAudioRenderer. (Fixed my imprecise "AVAudioConverter.contentSource" wording.) |
+| truehdd is "not intended for production/consumer playback," Apache-2.0 | ✅ **Verified verbatim** in its README. |
+| AC-3 patents expired 2017 | ✅ Holds (EFF). |
+| TrueHD/MLP patented "through ~2046" | ⚠️ **Overstated — corrected.** 2046 is Dolby's *whole* portfolio, not TrueHD-decode. Honest verdict: lossless-bed decode is **legally uncertain**, not provably encumbered to 2046. |
+| Moonfin #179 "TrueHD fails" as Apple TV evidence | ❌ **Withdrawn.** The Smart-TV repo is **Tizen/webOS**, not Apple TV. Irrelevant; removed. |
+| Rivulet/Moonfin Swift-file quotes | ✅ Kept as "unverified/likely fabricated" (couldn't confirm ≠ proof of fabrication; wording is appropriately hedged). |
+| AetherEngine transcodes TrueHD, stream-copies E-AC-3+JOC | ✅ Holds (its README). |
+| E-AC-3 last patent expired 2026-01-30 | ⚠️ Softened to "reportedly" (Phoronix "might now be expired"). Moot for the app anyway. |
+| Dolby daaplay decodes to PCM, no AVSampleBufferAudioRenderer/passthrough | ✅ Holds (its docs list that integration under "does not implement"). |
+
+Net of the self-audit: the **central conclusions are unchanged and better
+sourced** (no Apple TrueHD decoder; no confirmed tvOS 26 passthrough API; AC-3/
+E-AC-3-via-Apple is the real license-free path). Two secondary points were
+overstated and are now corrected: the **2046 patent scope** and the **misattributed
+Moonfin bug**.
+
 ### Sources
-- [AVAudioConverter / contentSource (DRC)](https://developer.apple.com/documentation/avfaudio/avaudioconverter) ·
-  [AVAudioContentSource.passthrough](https://developer.apple.com/documentation/avfaudio/avaudiocontentsource/passthrough)
+- [AVAudioConverter](https://developer.apple.com/documentation/avfaudio/avaudioconverter) ·
+  [AVAudioContentSource.passthrough](https://developer.apple.com/documentation/avfaudio/avaudiocontentsource/passthrough) ·
+  [SDK diff: AVFAudio xcode26.0 b1 (dotnet/macios)](https://github.com/dotnet/macios/wiki/AVFAudio-iOS-xcode26.0-b1)
 - [AVSampleBufferAudioRenderer](https://developer.apple.com/documentation/avfoundation/avsamplebufferaudiorenderer)
 - [Swiftfin #1641](https://github.com/jellyfin/Swiftfin/issues/1641) · [KSPlayer #862](https://github.com/kingslay/KSPlayer/issues/862)
 - [Dolby daaplay (decodes to PCM, no passthrough)](https://github.com/DolbyLaboratories/daaplay)
 - [AetherEngine](https://github.com/superuser404notfound/AetherEngine) · [truehdd (research-only)](https://github.com/truehdd/truehdd)
 - [AC-3 patent expiry 2017 (EFF)](https://freetoairamerica.wordpress.com/2017/03/20/electronic-frontier-foundation-the-patent-on-dolby-digital-ac-3-has-just-expired/) ·
-  [E-AC-3 last patent expired 2026-01-30 (Phoronix)](https://www.phoronix.com/news/Dolby-Digital-Plus-E-AC3-2026)
+  [E-AC-3 last patent reportedly expired 2026-01-30 (Phoronix)](https://www.phoronix.com/news/Dolby-Digital-Plus-E-AC3-2026)
 - [MLP/TrueHD patents (Wikipedia)](https://en.wikipedia.org/wiki/Meridian_Lossless_Packing) ·
-  [Dolby patents through 2046 (10-K)](https://s27.q4cdn.com/365963565/files/doc_financials/2022/q4/5ac8daf9-e853-43df-b76c-93df1280669f.pdf)
-</content>
-</invoke>
+  [Dolby whole-portfolio patents through 2046 — 10-K, NOT TrueHD-specific](https://s27.q4cdn.com/365963565/files/doc_financials/2022/q4/5ac8daf9-e853-43df-b76c-93df1280669f.pdf)

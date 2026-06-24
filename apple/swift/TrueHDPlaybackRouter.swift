@@ -86,7 +86,7 @@ public enum TrueHDPlaybackRouter {
             let name = codec == "ec-3" ? "Dolby Digital Plus (E-AC-3)" : "Dolby Digital (AC-3)"
             return "Playing the \(name) companion track via the system decoder. Lossy 5.1 — not the lossless TrueHD."
         case .losslessBed:
-            return "Playing the lossless TrueHD channel bed via the bundled decoder (RESEARCH-ONLY: the TrueHD/MLP decode is patent-encumbered through ~2046; Apache-2.0 does not grant Dolby's patents). Atmos objects are not rendered."
+            return "Playing the lossless TrueHD channel bed via the bundled decoder (RESEARCH-ONLY: TrueHD/MLP decode is patent-uncertain — the bundled crate disclaims production use and Apache-2.0 does not grant Dolby's patents). Atmos objects are not rendered."
         case .unavailable(let reason):
             return "No playable audio path: \(reason)"
         }

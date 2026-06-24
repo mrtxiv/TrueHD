@@ -19,7 +19,7 @@ run somewhere, and Apple ships no TrueHD decoder on any platform.
 
 | If you relax... | You get | Cost |
 | --- | --- | --- |
-| **#6** (allow non-GPL bundled decoder) | Lossless bed, all 3 platforms, on-device | Apache-2.0 `truehdd` (not your code, not GPL/LGPL) — BUT **patent-uncertain**: TrueHD patents run ~2046, truehdd is research-only, Apache-2.0 doesn't grant Dolby's patents. Not "no license" safe. Atmos objects also encumbered. |
+| **#6** (allow non-GPL bundled decoder) | Lossless bed, all 3 platforms, on-device | Apache-2.0 `truehdd` (not your code, not GPL/LGPL) — BUT **patent-uncertain**: later TrueHD/FBA tools' patent status is unresolved, truehdd is research-only, Apache-2.0 doesn't grant Dolby's patents. Not "no license" safe. Atmos objects separately encumbered. |
 | **#5** (allow external hardware) | Lossless + Atmos | tvOS 26 + an AVR, tvOS-only — and the developer enable API is **unconfirmed/unproven** (NOT `AVAudioContentSource.passthrough`, which is a DRC enum). See `FACT_CHECK.md`. |
 | **#1** (allow lossy) | AC-3/E-AC-3 companion via Apple's *own* decoder | Lossy 5.1; **the only** option needing no decode-by-you, no hardware, all 3 platforms |
 | **#4b** (pay Dolby) | Lossless + Atmos, all platforms, on-device | A paid Dolby (and DTS) license — **this is what Infuse does** |
@@ -77,11 +77,14 @@ run somewhere, and Apple ships no TrueHD decoder on any platform.
   Dolby's**. ([Apache FAQ](https://www.apache.org/foundation/license-faq.html))
 - The **original** MLP patents (filed ~1998) have largely lapsed, BUT this does
   **not** make the lossless bed safe to ship: TrueHD as actually encoded (MLP
-  **FBA**, 16-ch) uses later coding tools, and Dolby's issued patents run
-  **through ~2046**. The `truehdd` authors themselves say the decoder is "not
-  intended for production environments or consumer playback systems." Treat the
-  bundled-decoder bed as **patent-uncertain / research-only** until cleared by
-  counsel — do NOT assume it is patent-clear. (See `../FACT_CHECK.md`.)
+  **FBA**, 16-ch) uses later coding tools of **uncertain** patent status. (Note:
+  the often-cited "Dolby patents through ~2046" figure is Dolby's *whole*
+  portfolio — Atmos/AC-4/Vision — NOT specifically TrueHD decode.) The `truehdd`
+  authors themselves say the decoder is "not intended for production environments
+  or consumer playback systems." Treat the bundled-decoder bed as
+  **patent-uncertain / research-only** until cleared by counsel — do NOT assume
+  it is patent-clear, and do NOT assume it is definitely infringing either.
+  (See `../FACT_CHECK.md`.)
   ([Wikipedia: MLP](https://en.wikipedia.org/wiki/Meridian_Lossless_Packing),
   [truehdd](https://github.com/truehdd/truehdd))
 - **Atmos object (OAMD) patents are live through ~2046** and Dolby still
