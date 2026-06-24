@@ -1,21 +1,22 @@
-// TrueHDPassthrough.swift  (tvOS 26+)
+// TrueHDPassthrough.swift  (tvOS 26+)  —  AVPlayer REFERENCE PATH (EXCLUDED)
 //
-// The ONLY way to play lossless Dolby TrueHD while your app decodes NOTHING and
-// bundles NO decoder: hand the untouched TrueHD bitstream to the OS and let an
-// external AV receiver decode it. Apple's API for this is
-// `AVAudioContentSource.passthrough`:
-//   https://developer.apple.com/documentation/avfaudio/avaudiocontentsource/passthrough
+// ⚠️ This file uses AVPlayer, which the project's constraints EXCLUDE. It is kept
+// only as a reference, because the AVPlayer/AVPlayerItem family is the ONLY route
+// anyone has actually shipped tvOS 26 passthrough through so far (Infuse/Plex).
+// The active no-AVPlayer path is `TrueHDPassthroughRenderer.swift`. If you ever
+// relax "no AVPlayer," this is the most likely-to-actually-work starting point.
+//
+// CORRECTION: an earlier version of this header claimed Apple's passthrough API
+// "is `AVAudioContentSource.passthrough`." That is WRONG — that enum is the
+// AVAudioConverter DRC `contentSource` value, not an HDMI bitstream switch (name
+// collision). There is no confirmed public developer API for tvOS 26 bitstream
+// passthrough yet; the `configurePassthrough` below stays a placeholder.
 //
 // Hard costs (unavoidable, by design):
 //   * Requires EXTERNAL HARDWARE — an AVR/soundbar performs the decode.
 //   * tvOS / Apple TV 4K only. iOS and macOS have no TrueHD bitstream output.
-//   * Uses AVPlayer — passthrough is an AVFoundation routing feature; there is
-//     no non-AVPlayer passthrough API.
-//   * As of tvOS 26 betas, TrueHD format enablement on tvOS may still be
-//     pending Apple. Verify on a real Apple TV + AVR before relying on it.
-//
-// This is a scaffold against the documented symbol. Confirm the exact property
-// wiring against the shipping SDK — sections marked VERIFY may move.
+//   * As of tvOS 26, the developer enable API is unconfirmed; verify on a real
+//     Apple TV + AVR before relying on it.
 
 #if os(tvOS)
 import AVFoundation
@@ -36,10 +37,9 @@ public final class TrueHDPassthroughPlayer {
         let asset = AVURLAsset(url: url)
         let item = AVPlayerItem(asset: asset)
 
-        // VERIFY against SDK: select passthrough as the content source so the OS
-        // ships the encoded bitstream to the receiver instead of decoding it.
-        // The documented symbol is `AVAudioContentSource.passthrough`; the exact
-        // property it is assigned to is what to confirm in the tvOS 26 SDK.
+        // UNRESOLVED: no confirmed public API ships the encoded bitstream to the
+        // receiver instead of decoding it. Do NOT assume AVAudioContentSource
+        // (a DRC enum) does this. Placeholder until Apple documents the switch.
         configurePassthrough(on: item)
 
         self.item = item
@@ -56,16 +56,13 @@ public final class TrueHDPassthroughPlayer {
 
     private func configurePassthrough(on item: AVPlayerItem) {
         // The intent: route the encoded TrueHD bitstream untouched to the AVR.
-        // Apple exposes this via AVAudioContentSource.passthrough. Depending on
-        // the final API this is set on the player item's audio configuration or
-        // via the audio session route. Pseudocode against the documented symbol:
-        //
-        //   if #available(tvOS 26.0, *) {
-        //       item.audioContentSource = .passthrough   // <- confirm exact property name
-        //   }
-        //
-        // Until the property name is confirmed in your SDK, this method is a
-        // placeholder so the file compiles; replace with the real assignment.
+        // There is NO confirmed public API for this as of June 2026.
+        // `AVAudioContentSource.passthrough` is the AVAudioConverter DRC enum, NOT
+        // this switch (name collision) — do not assign it here expecting bitstream
+        // output. Player projects tracking the real API are still open feature
+        // requests (Swiftfin #1641, KSPlayer #862). This method is a deliberate
+        // placeholder so the file compiles; wire the real assignment when Apple
+        // documents it. Until then, AVPlayer decodes to PCM/Dolby MAT as usual.
         _ = item
     }
 

@@ -7,12 +7,17 @@ one price (unavoidable) is an external AVR and tvOS-only.
 
 ## The new facts (tvOS 26 / Xcode 26)
 
-1. **Passthrough is a low-level AudioToolbox capability, not just an AVPlayer
-   feature.** New enum `AudioCodecContentSource` adds:
-   - `kAudioCodecContentSource_Passthrough`
-   - `kAudioCodecContentSource_ApplePassthrough`
-   (source: tvOS 26 AudioToolbox header diff, dotnet/macios wiki). This means the
-   OS can be told "do not decode — pass this bitstream through."
+1. **CORRECTION (June 2026): `AudioCodecContentSource` is NOT the bitstream
+   switch.** This doc originally claimed `kAudioCodecContentSource_Passthrough` /
+   `_ApplePassthrough` (and `AVAudioContentSource.passthrough`) tells the OS to
+   pass a bitstream through. That was wrong — a name collision. That enum is the
+   `contentSource` value for **AVAudioConverter's Dynamic Range Compression
+   (DRC)** behavior; `.passthrough` means "apply DRC without tailoring it to a
+   content type." It has nothing to do with HDMI bitstream-out. There is, as of
+   now, **no confirmed public developer API** to enable tvOS 26 HDMI passthrough
+   from a hand-built renderer — Swiftfin #1641 and KSPlayer #862 are still OPEN
+   feature requests with no working sample, and the only shipping passthrough so
+   far (Infuse/Plex) is via the AVPlayer/AVPlayerItem family.
 2. **`AVSampleBufferAudioRenderer` accepts COMPRESSED buffers.** Apple's docs:
    it "is an object used to decompress audio and play compressed or uncompressed
    audio." So you can enqueue compressed TrueHD `CMSampleBuffer`s to it WITHOUT
@@ -53,8 +58,14 @@ VERIFY against the shipping tvOS 26 SDK (no complete public example exists yet;
 Swiftfin #1641 and KSPlayer #862 are still open feature requests).
 
 ## Honest status of the original dream
-Lossless TrueHD + no self-decode + no AVPlayer is now reachable — but only with
-an external AVR on tvOS. Remove the AVR (your #5) and it collapses back to the
-empty set, because nothing on-device decodes TrueHD. That wall is unchanged; the
-breakthrough is that the no-decode/no-AVPlayer *bitstream-out* path is real and
-buildable on tvOS 26.
+Lossless TrueHD + no self-decode + no AVPlayer + external AVR on tvOS is
+**plausible but UNPROVEN**. The wall is unchanged: nothing on-device decodes
+TrueHD, so an AVR is mandatory and it's tvOS-only. What this doc can no longer
+claim is that the *no-AVPlayer* enable path is "buildable today" — the API to
+flip bitstream passthrough on a hand-built AVSampleBufferAudioRenderer is not
+public/confirmed (see correction above). The renderer in
+`apple/swift/TrueHDPassthroughRenderer.swift` is the best-guess scaffold; its
+`configurePassthrough()` is deliberately a no-op + HDMI sanity check, not a
+working switch. The one path proven to ship passthrough so far is via AVPlayer —
+which your constraints exclude. **The dependable, real-today path remains the
+AC-3 demux fallback (no AVPlayer, no HLS): `AC3DecodePipeline`.**

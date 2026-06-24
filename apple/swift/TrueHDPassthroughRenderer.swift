@@ -70,23 +70,36 @@ public final class TrueHDPassthroughRenderer {
         synchronizer.rate = 0
     }
 
-    // MARK: - Passthrough enable (VERIFY against tvOS 26 SDK)
+    // MARK: - Passthrough enable (UNRESOLVED — no public API confirmed yet)
 
     private func configurePassthrough() {
-        // Intent: tell the system to PASS THROUGH (not decode) the bitstream to
-        // the HDMI-connected AVR. The documented entry points are:
-        //   * AVAudioContentSource.passthrough
-        //   * AudioToolbox kAudioCodecContentSource_Passthrough / _ApplePassthrough
-        // Confirm the exact property to set on AVSampleBufferAudioRenderer or via
-        // the AVAudioSession route configuration in the shipping SDK, e.g.:
+        // HONEST STATUS (June 2026): there is NO confirmed public developer API
+        // to enable tvOS 26 HDMI bitstream passthrough from a hand-built renderer.
         //
-        //   if #available(tvOS 26.0, *) {
-        //       // renderer.audioContentSource = .passthrough   // <- confirm name
-        //   }
+        // DO NOT rely on `AVAudioContentSource.passthrough` /
+        // `kAudioCodecContentSource_Passthrough` for this: that enum is the
+        // `contentSource` value for AVAudioConverter's Dynamic Range Compression
+        // (DRC) behavior, NOT an HDMI bitstream switch. It is a name collision.
         //
-        // Also confirm the output route is HDMI to a TrueHD-capable AVR
-        // (AVAudioSession.currentRoute outputs contains .HDMI); over AirPlay the
-        // compressed path is silently dropped.
+        // What is actually true:
+        //   * tvOS 26 DOES add HDMI bitstream passthrough (TrueHD / DTS-HD MA
+        //     untouched to an AVR) — but it is system/route gated and, as of now,
+        //     only demonstrated through the AVPlayer/AVPlayerItem family. Player
+        //     projects tracking the developer API are still OPEN feature requests
+        //     with no working sample (Swiftfin #1641, KSPlayer #862).
+        //   * Whether AVSampleBufferAudioRenderer can be told to pass a compressed
+        //     'mlpa' bitstream straight to HDMI is UNVERIFIED. Treat this whole
+        //     no-AVPlayer lossless path as EXPERIMENTAL until proven on-device.
+        //
+        // Minimum sanity check we CAN do today: confirm the output route is HDMI.
+        // Over AirPlay/HomePod the compressed path is silently dropped regardless.
+        let hasHDMI = AVAudioSession.sharedInstance().currentRoute.outputs
+            .contains { $0.portType == .HDMI }
+        if !hasHDMI {
+            // No AVR over HDMI -> passthrough cannot work; caller should fall back
+            // to the AC-3 demux path. (TrueHDAutoPlayer already does this.)
+            NSLog("[TrueHDPassthrough] No HDMI output route; passthrough unavailable.")
+        }
     }
 
     // MARK: - Format description ('mlpa') + CMSampleBuffer
