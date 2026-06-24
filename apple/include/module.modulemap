@@ -1,0 +1,14 @@
+// module.modulemap — exposes the C shims to Swift as a single importable module.
+//
+// In your Swift code:   import TrueHDCShims
+// Then ac3demux_open / truehd_decoder_* are callable directly.
+//
+// Point your build system's import search path at this `apple/include` directory
+// (SwiftPM: a `.systemLibrary` target or a C target's publicHeadersPath; Xcode:
+// add to "Import Paths" / use a bridging header instead — see WIRING.md).
+
+module TrueHDCShims {
+    header "ffmpeg_ac3_demux.h"   // libavformat demuxer (AC-3/E-AC-3 extraction)
+    header "truehd_decoder.h"     // optional Apache-2.0 lossless core C ABI
+    export *
+}
