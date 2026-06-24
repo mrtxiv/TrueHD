@@ -21,14 +21,17 @@ AC-3 companion handled by Apple's OS codec.
 
 ## How it works
 
-Code: `apple/swift/AC3CompanionDecoder.swift`. Two entry points:
+No AVPlayer, no HLS. You demux the AC-3/E-AC-3 access units yourself (demux-only,
+no decode) and let Apple's codec decode them. Two output graphs are provided:
 
-- **Native containers (MP4/MOV/HLS):** `AC3TrackSelector.selectAC3Track(in:)`
-  picks the AC-3/E-AC-3 audio option and lets `AVPlayer` decode + play it.
-  This is the most robust form — literally zero decode code.
-- **Custom demux (MKV/M2TS):** feed AC-3/E-AC-3 access units to
+- **Pure AudioToolbox (`AC3DecodePipeline`):** demuxer → `AC3ConverterCore`
+  (`AudioConverter`) → ring buffer → output `AudioUnit`. No AVFoundation at all.
+- **AVAudioEngine (`AC3CompanionDecoder`):** feed access units to
   `AppleAC3Decoder` (wraps `AVAudioConverter` → Apple's codec) and schedule the
   resulting `AVAudioPCMBuffer` on an `AVAudioEngine` via `AC3CompanionPlayer`.
+
+Demuxers: `AVAssetReaderAC3Source` (Apple-native, MP4/MOV) or `FFmpegAC3Source`
+(MKV/M2TS via libavformat, demux-only). Neither uses AVPlayer or HLS.
 
 ## Honest caveats — verify before shipping
 
@@ -37,11 +40,12 @@ Code: `apple/swift/AC3CompanionDecoder.swift`. Two entry points:
    embedded AC-3 core. Your demuxer must surface it. If a title has *only*
    TrueHD with no AC-3 anywhere, this path has nothing to play — fall back to
    the bundled-decoder path (`decoder-core/`) for that title.
-2. **iOS AC-3-via-AVAudioConverter availability.** AC-3/E-AC-3 decode is
-   reliable through AVPlayer/HLS on all platforms; raw `AVAudioConverter` AC-3
-   decode is well-supported on macOS and current iOS/tvOS, but validate on your
-   minimum-deployment devices. If a device refuses raw-packet AC-3 decode, use
-   the AVPlayer track-selection route instead.
+2. **Raw-packet AC-3 decode availability.** Raw `AVAudioConverter` / `AudioConverter`
+   AC-3/E-AC-3 decode is well-supported on macOS and current iOS/tvOS, but
+   validate on your minimum-deployment devices with `AudioDecoderProbe.swift`. If
+   a device refuses raw-packet AC-3 decode, this no-AVPlayer/no-HLS path cannot
+   serve it — present an "unsupported on this device" state (an AVPlayer
+   track-selection fallback is intentionally out of scope).
 3. **Channel layout.** The companion is typically 5.1. Set `channels`/layout to
    match the actual track; don't assume 6.
 

@@ -109,8 +109,9 @@ try pipeline?.start()
 
 1. **Decoder presence on iOS/tvOS.** Run `AudioDecoderProbe.swift` on the
    minimum-supported device. AC-3/E-AC-3 decode is guaranteed on macOS; confirm
-   on your iOS/tvOS targets. If a device lacks the standalone decoder, fall back
-   to remuxing the AC-3 into a small local MP4/HLS and letting `AVPlayer` decode.
+   on your iOS/tvOS targets. If a device lacks the standalone decoder, this
+   no-AVPlayer/no-HLS path cannot serve it — present an "unsupported on this
+   device" state. (An AVPlayer/HLS remux fallback is intentionally out of scope.)
 2. **Channel layout.** The companion is usually 5.1 (6 channels). Read the real
    layout from the track; don't hardcode if you support other layouts.
 3. **Ring buffer.** The reference ring buffer uses a lock for simplicity. For

@@ -77,6 +77,14 @@ could not be confirmed). Everything below is what survives scrutiny.
 5. Press signals the passthrough path is **AVPlayer-based** — so "lossless
    passthrough AND no AVPlayer" may be an empty set today.
 
+**Repo decision (2026-06):** per the no-AVPlayer/no-HLS product rule, the
+AVPlayer passthrough scaffold (`TrueHDPassthrough.swift`) and the AVPlayer AC-3
+track-selector (`AC3TrackSelector` in `AC3CompanionDecoder.swift`) were
+**removed**. Only the unproven no-AVPlayer passthrough renderer remains. Honest
+consequence: **if lossless TrueHD passthrough requires AVPlayer, this repo has no
+working lossless passthrough path** — only the proven lossy AC-3 companion (and
+the optional bundled `truehdd` decoder for an on-device lossless bed).
+
 ## F. What remains TRUE and buildable
 
 - **AC-3/E-AC-3 companion via Apple's own decoder** — all platforms, no AVPlayer,

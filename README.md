@@ -33,8 +33,8 @@ choices and a router to switch between them:
   packet → PCM via Apple's codec. No AVPlayer, no AVFoundation.
 - `apple/swift/AC3DecodePipeline.swift` — demuxer → `AC3ConverterCore` → ring
   buffer → output AudioUnit. The full no-AVPlayer playback chain.
-- `apple/swift/AC3CompanionDecoder.swift` — AVFoundation variants
-  (`AVAudioConverter` decoder + optional AVPlayer track selection).
+- `apple/swift/AC3CompanionDecoder.swift` — AVAudioEngine variant
+  (`AVAudioConverter` decoder → `AVAudioEngine`). No AVPlayer, no HLS.
 - `apple/swift/TrueHDPlaybackRouter.swift` — pure policy function: choose
   lossless-bed vs AC-3-companion per source, with honest UI disclosure strings.
 - `decoder-core/` — Apache-2.0 `truehd` (NOT GPL/LGPL) Rust core behind a C ABI,
@@ -62,7 +62,9 @@ pipeline.stop()
 
 1. **Verify the decoder exists on-device.** Run `AudioDecoderProbe.swift`; look
    for an `'adec'` component with subtype `'ac-3'` / `'ec-3'`. Present on macOS;
-   confirm on your minimum iOS/tvOS targets. If absent, fall back to remux+AVPlayer.
+   confirm on your minimum iOS/tvOS targets. If a device lacks the standalone
+   decoder, this no-AVPlayer path cannot serve that device — surface a clear
+   "unsupported on this device" state rather than falling back to AVPlayer/HLS.
 2. **A companion track must exist.** TrueHD titles usually carry a separate
    AC-3/E-AC-3 track or an embedded AC-3 core; your demuxer must surface it. A
    TrueHD-only title has nothing for this path to play — use `decoder-core/`.

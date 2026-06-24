@@ -14,7 +14,8 @@
 // present on the device. It is on macOS; on iOS/tvOS verify with
 // AudioDecoderProbe.swift (look for an 'adec' component with subtype 'ac-3' /
 // 'ec-3'). If absent on your min-deployment device, this path can't decode
-// there and you'd fall back to remux+AVPlayer.
+// there; surface an "unsupported on this device" state (the no-AVPlayer/no-HLS
+// constraint rules out an AVPlayer/HLS fallback).
 
 import AudioToolbox
 

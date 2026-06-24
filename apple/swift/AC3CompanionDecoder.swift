@@ -1,80 +1,28 @@
 // AC3CompanionDecoder.swift
 //
-// The "no decode by your app" path: play the AC-3 / E-AC-3 companion track that
-// ships alongside a Dolby TrueHD stream, using APPLE'S OWN decoder. Your code
-// never runs the MLP/Dolby decode algorithm — CoreAudio does it. Works on
-// iOS, macOS, and tvOS. Trade-off: this is the lossy 5.1 companion, not the
-// lossless TrueHD. (See ../../FINDINGS.md for why lossless can't meet the
-// no-decode + no-hardware constraints.)
+// The "no decode by your app" path, AVAudioEngine flavor (NO AVPlayer, NO HLS):
+// play the AC-3 / E-AC-3 companion track that ships alongside a Dolby TrueHD
+// stream, using APPLE'S OWN decoder. Your code never runs the MLP/Dolby decode
+// algorithm — CoreAudio does it via AVAudioConverter. Works on iOS, macOS, and
+// tvOS. Trade-off: this is the lossy 5.1 companion, not the lossless TrueHD.
+// (See ../../FINDINGS.md for why lossless can't meet the no-decode + no-hardware
+// constraints.)
 //
-// Two ways to use Apple's decoder, depending on where your audio comes from:
+// You demux the AC-3/E-AC-3 access units yourself (e.g. AVAssetReaderAC3Source
+// or FFmpegAC3Source — both demux-only, no decode) and feed them to
+// `AppleAC3Decoder`, which uses AVAudioConverter (Apple's codec) to produce PCM
+// you schedule on an `AVAudioEngine` via `AC3CompanionPlayer`.
 //
-//   A. AVFoundation-native container (MP4/MOV/HLS): just SELECT the AC-3 track
-//      with AVPlayer media selection. Apple decodes + plays it. Zero decode
-//      code, most robust, all platforms. -> `selectAC3Track(in:)`.
-//      NOTE: this variant uses AVPlayer. If your product forbids AVPlayer/HLS,
-//      do NOT use path A — use the pure-AudioToolbox `AC3DecodePipeline` (no
-//      AVPlayer, no HLS) instead. Path A is kept only for AVFoundation-native apps.
-//
-//   B. Your own demuxer (MKV/M2TS): feed AC-3/E-AC-3 access units to
-//      `AppleAC3Decoder`, which uses AVAudioConverter (Apple's codec) to turn
-//      them into PCM you can schedule on an AVAudioEngine. -> `AppleAC3Decoder`.
+// Relationship to AC3DecodePipeline: that file is the even-lower-level pure
+// AudioToolbox/AudioUnit path (no AVFoundation at all). This file is the
+// AVAudioEngine alternative. Pick whichever output graph you prefer; neither
+// uses AVPlayer or HLS. (An earlier AVPlayer track-selection variant was removed
+// to honor the no-AVPlayer/no-HLS constraint — see VERIFICATION.md.)
 
 import AVFoundation
 import AudioToolbox
 
-// MARK: - A. AVPlayer track selection (native containers, truly zero decode code)
-
-public enum AC3TrackSelector {
-    /// FourCCs Apple's decoder handles: 'ac-3' (AC-3) and 'ec-3' (E-AC-3 / DD+).
-    public static let decodableFourCCs: Set<String> = ["ac-3", "ec-3"]
-
-    /// Select the AC-3/E-AC-3 audio track (the TrueHD companion) so AVPlayer
-    /// decodes it with Apple's codec. Returns true if such a track was selected.
-    public static func selectAC3Track(in playerItem: AVPlayerItem) async -> Bool {
-        guard let asset = playerItem.asset as? AVURLAsset,
-              let group = try? await asset.loadMediaSelectionGroup(for: .audible)
-        else { return false }
-
-        for option in group.options {
-            // Prefer options whose format is AC-3 / E-AC-3.
-            if let fmt = option.mediaType == .audio ? option : nil,
-               optionIsAC3(fmt) {
-                playerItem.select(option, in: group)
-                return true
-            }
-        }
-        return false
-    }
-
-    private static func optionIsAC3(_ option: AVMediaSelectionOption) -> Bool {
-        // AVMediaSelectionOption doesn't expose the codec directly; fall back to
-        // common-metadata/format hints. For precise matching, inspect the
-        // AVAssetTrack format descriptions (see `isAC3` below).
-        let s = option.displayName.lowercased()
-        return s.contains("ac3") || s.contains("ac-3") || s.contains("dolby digital")
-            || s.contains("dd+") || s.contains("eac3") || s.contains("e-ac-3")
-    }
-
-    /// Precise codec check on an AVAssetTrack's format descriptions.
-    public static func isAC3(_ track: AVAssetTrack) async -> Bool {
-        guard let descs = try? await track.load(.formatDescriptions) else { return false }
-        for d in descs {
-            let mst = CMFormatDescriptionGetMediaSubType(d)
-            let fourCC = fourCCString(mst)
-            if decodableFourCCs.contains(fourCC) { return true }
-        }
-        return false
-    }
-
-    static func fourCCString(_ code: FourCharCode) -> String {
-        let b = [UInt8((code >> 24) & 0xFF), UInt8((code >> 16) & 0xFF),
-                 UInt8((code >> 8) & 0xFF), UInt8(code & 0xFF)]
-        return String(bytes: b, encoding: .ascii) ?? ""
-    }
-}
-
-// MARK: - B. AVAudioConverter decode for custom demuxers (MKV/M2TS access units)
+// MARK: - AVAudioConverter decode for custom demuxers (MKV/M2TS access units)
 
 public final class AppleAC3Decoder {
     public enum Codec { case ac3, eac3 }

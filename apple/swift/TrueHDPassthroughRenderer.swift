@@ -12,8 +12,11 @@
 // reachable via AVPlayer. Gate this behind a runtime probe and fall back to the
 // AC-3 companion path; do not advertise it as working until verified on-device.
 //
-// Competing hypothesis: `TrueHDPassthrough.swift` tries the same thing via
-// AVPlayer. It is unknown which (if either) ships. See ../../VERIFICATION.md §E.
+// NOTE: there is also an AVPlayer-based passthrough hypothesis, which the press
+// suggests may be the route Apple actually ships. That scaffold was REMOVED from
+// this repo to honor the no-AVPlayer constraint. Consequence: if lossless
+// passthrough turns out to require AVPlayer, this repo has no working lossless
+// passthrough path at all — only the AC-3 companion. See ../../VERIFICATION.md §E.
 //
 // Building blocks (tvOS 26):
 //   * AVSampleBufferAudioRenderer + AVSampleBufferRenderSynchronizer (no AVPlayer)
